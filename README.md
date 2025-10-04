@@ -1,117 +1,167 @@
-WhatsApp Gateway Berbasis Node.js & Baileys
-Ini adalah aplikasi backend WhatsApp Gateway multi-device yang dibangun menggunakan Node.js, Express, Sequelize (dengan SQLite), dan library Baileys.
-
-Fitur Utama
-Multi-Device: Kelola beberapa akun WhatsApp secara bersamaan.
-
-Dashboard Web: Antarmuka untuk mengelola akun, melihat status koneksi (termasuk QR Code), dan log pesan.
-
-Autentikasi & Otorisasi: Login dengan Email/Password atau Google OAuth, dengan hak akses berbasis peran (admin, operator, viewer).
-
-Database: Menggunakan SQLite untuk kemudahan setup dan backup.
-
-REST API: Endpoint untuk mengirim pesan dan memeriksa status.
-
-Webhook: Terintegrasi untuk mengirim notifikasi ke sistem lain seperti n8n.
-
-Keamanan: Dilengkapi dengan helmet untuk proteksi header HTTP dan manajemen sesi yang aman.
-
-Siap Produksi: Termasuk konfigurasi PM2 untuk menjalankan aplikasi di background.
-
+WA Gateway - Versi 3.0
+Selamat datang di WA Gateway, sebuah backend Node.js yang kuat dan fleksibel untuk mengelola beberapa akun WhatsApp. Dibangun di atas library Baileys, aplikasi ini mengubah perangkat Anda menjadi gateway WhatsApp multi-sesi yang siap diintegrasikan dengan platform otomasi seperti n8n atau sistem Anda sendiri.
+Versi 3.0 membawa pembaruan besar pada sisi user experience dan fleksibilitas, dengan dashboard real-time, log pesan, dan konfigurasi per sesi.
+<!-- Ganti dengan URL screenshot dashboard Anda -->
+<!-- Contoh: -->
+✨ Fitur Utama (v3.0)
+Manajemen Multi-Akun: Kelola beberapa akun WhatsApp secara bersamaan dari satu dashboard.
+Dashboard Real-time:
+Status Koneksi Live: Lihat status (connecting, connected, qr-code, disconnected) berubah secara instan tanpa perlu me-refresh halaman, berkat integrasi WebSockets (Socket.IO).
+QR Code Instan: QR code untuk login muncul secara otomatis saat dibutuhkan.
+Log Pesan Interaktif:
+Lihat riwayat pesan masuk dan keluar langsung di dashboard.
+Pesan baru muncul secara real-time.
+Filter per Akun: Saring log pesan untuk melihat percakapan dari sesi tertentu.
+Konfigurasi per Sesi:
+Webhook & API Key Unik: Atur tujuan Webhook dan API Key yang berbeda untuk setiap akun WhatsApp melalui menu "Settings" di dashboard.
+Integrasi & API:
+REST API Fleksibel: Kirim pesan teks, media via URL (/api/send), atau unggah file biner (/api/send-media).
+Proteksi API Key: Amankan endpoint API Anda dengan API Key yang bisa diatur per sesi.
+Webhook Otomatis: Kirim data pesan masuk (termasuk URL media) ke sistem eksternal (seperti n8n) secara otomatis.
+Keamanan:
+Login via Google OAuth: Autentikasi yang aman dan mudah.
+Whitelist Admin: Batasi akses login hanya untuk email yang terdaftar di file .env.
+Proteksi CSRF & Helmet: Keamanan standar untuk aplikasi web.
+Stabilitas:
+Restore Sesi Otomatis: Sesi yang aktif akan secara otomatis mencoba menyambung ulang saat server di-restart.
+Penanganan Konkurensi Database: Menggunakan mode WAL pada SQLite dan write queue untuk menangani banyak pesan masuk secara bersamaan tanpa crash.
+🛠️ Tumpukan Teknologi
+Backend: Node.js, Express.js
+Integrasi WhatsApp: @whiskeysockets/baileys
+Database: SQLite dengan Sequelize ORM
+Real-time Engine: Socket.IO
+Autentikasi: Passport.js (Google OAuth 2.0)
+Tampilan: EJS (Embedded JavaScript templates) dengan Tailwind CSS
+🚀 Instalasi & Setup
+Ikuti langkah-langkah berikut untuk menjalankan aplikasi ini di server Anda (direkomendasikan Debian/Ubuntu/Armbian).
 1. Prasyarat
-Node.js: Versi 18 atau lebih tinggi.
+Node.js (v18 atau lebih tinggi)
+npm (v10 atau lebih tinggi)
+Git
+2. Kloning Repositori
+git clone [https://github.com/thehanifz/wasap.git](https://github.com/thehanifz/wasap.git)
+cd wasap
 
-NPM: Versi 10 atau lebih tinggi.
 
-Git: Untuk clone repositori.
-
-2. Instalasi
-Clone Repositori
-
-git clone <url-repo-anda>
-cd whatsapp-gateway-backend
-
-Install Dependensi
-
+3. Instal Dependensi
 npm install
 
-Konfigurasi Environment
-Salin file .env.example menjadi .env dan isi nilainya.
 
+4. Konfigurasi Environment
+Salin file .env.example menjadi .env dan isi semua nilainya.
 cp .env.example .env
+nano .env
 
-Buka file .env dan sesuaikan nilainya:
 
-SESSION_SECRET: Ganti dengan string acak yang sangat kuat.
-
-GOOGLE_CLIENT_ID & GOOGLE_CLIENT_SECRET: Dapatkan dari Google Cloud Console dengan membuat kredensial OAuth 2.0. Pastikan Authorized redirect URIs diisi dengan http://your-domain.com/auth/google/callback.
-
-INITIAL_ADMIN_EMAIL & INITIAL_ADMIN_PASSWORD: Atur kredensial untuk akun admin pertama yang akan dibuat secara otomatis.
-
-3. Menjalankan Aplikasi
-Migrasi Database
-Perintah ini akan membuat file database SQLite dan tabel-tabel yang diperlukan berdasarkan model Sequelize.
-
-npm run db:migrate
-
-Menjalankan dalam Mode Development
-Gunakan nodemon untuk auto-reload saat ada perubahan kode.
-
+Penjelasan Variabel .env:
+| Variabel | Deskripsi | Contoh |
+| :--- | :--- | :--- |
+| PORT | Port yang akan digunakan oleh server. | 3000 |
+| SESSION_SECRET | Kunci rahasia untuk enkripsi sesi. Ganti dengan string acak yang panjang. | rahasia-sekali-jangan-disebar |
+| DB_STORAGE | Nama file database SQLite. | whatsapp_gateway.sqlite |
+| GOOGLE_CLIENT_ID| Client ID dari Google Cloud Console. | 12345...apps.googleusercontent.com |
+| GOOGLE_CLIENT_SECRET | Client Secret dari Google Cloud Console. | GOCSPX-... |
+| ADMIN_EMAILS | Daftar email yang diizinkan login, pisahkan dengan koma. | user1@gmail.com,user2@gmail.com |
+| BASE_URL | PENTING! URL publik lengkap aplikasi Anda. Harus sama persis dengan Authorized redirect URI di Google Cloud. | https://wa.domain-anda.com |
+⚙️ Cara Pakai
+Menjalankan Aplikasi
+Mode Pengembangan (Development):
+Gunakan nodemon untuk menjalankan server, yang akan otomatis restart saat ada perubahan kode.
 npm run dev
 
-Aplikasi akan berjalan di http://localhost:3000.
 
-Menjalankan dalam Mode Produksi dengan PM2
-PM2 adalah manajer proses yang akan menjaga aplikasi tetap berjalan di background dan me-restartnya jika terjadi crash.
-
-Install PM2 secara global:
-
+Mode Produksi (Production) dengan PM2:
+Gunakan PM2 untuk menjalankan aplikasi di latar belakang secara permanen dan memonitornya.
+# Instal PM2 secara global jika belum ada
 npm install pm2 -g
 
-Start aplikasi menggunakan file konfigurasi:
+# Jalankan aplikasi dengan nama "wa-gateway"
+pm2 start server.js --name "wa-gateway"
 
-pm2 start ecosystem.config.js --env production
+# (Opsional) Perintah PM2 lainnya:
+pm2 list        # Lihat semua proses yang berjalan
+pm2 logs wa-gateway # Lihat log real-time
+pm2 restart wa-gateway # Restart aplikasi
+pm2 stop wa-gateway  # Hentikan aplikasi
 
-Simpan daftar proses PM2 agar otomatis berjalan saat server reboot:
 
-pm2 save
+Tutorial Penggunaan Dashboard
+Login: Buka https://wa.domain-anda.com di browser. Anda akan diarahkan ke halaman login. Klik "Sign in with Google" dan login menggunakan email yang sudah Anda daftarkan di ADMIN_EMAILS.
+Menambah Akun:
+Di dashboard, masukkan nama deskriptif untuk sesi baru Anda (misal: "Nomor Kantor").
+Klik "Add Account".
+Menghubungkan Akun:
+Akun baru akan muncul dengan status "disconnected".
+Klik tombol "Connect". Status akan berubah menjadi "connecting", lalu "qr-code".
+Scan QR code yang muncul menggunakan aplikasi WhatsApp di ponsel Anda (Link a device).
+Setelah berhasil, status akan berubah menjadi "connected".
+Mengatur Webhook & API Key (Fitur v3.0):
+Klik tombol "Settings" pada akun yang sudah ada.
+Sebuah pop-up akan muncul.
+Webhook URL: Masukkan URL tujuan (misal: dari n8n) ke mana data pesan masuk akan dikirim untuk sesi ini.
+API Key: Masukkan kunci rahasia yang akan digunakan oleh sistem eksternal untuk mengirim pesan melalui sesi ini.
+Klik "Save Settings".
+Tutorial Integrasi n8n
+Menerima Pesan di n8n
+Buat workflow baru di n8n.
+Gunakan node Webhook.
+Salin URL Webhook (mode Production) dari n8n.
+Di dashboard WA Gateway Anda, klik "Settings" pada akun yang relevan, dan tempelkan URL tersebut ke kolom "Webhook URL", lalu simpan.
+Aktifkan workflow n8n Anda.
+Setiap kali ada pesan masuk ke nomor WhatsApp tersebut, datanya akan muncul di n8n dengan struktur seperti ini:
+{
+  "event": "message.incoming",
+  "data": {
+    "id": 1,
+    "messageId": "ABCDEFG12345",
+    "direction": "incoming",
+    "from": "628xxxxxxxxxx@s.whatsapp.net",
+    "to": "628yyyyyyyyyy@s.whatsapp.net",
+    "content": "Ini adalah isi pesan",
+    "type": "conversation",
+    "mediaUrl": null,
+    "accountId": 1
+  }
+}
 
-Buat startup script untuk sistem operasi Anda (misal: Linux/Debian/Ubuntu):
 
-pm2 startup
+Mengirim Pesan dari n8n
+Gunakan node HTTP Request di n8n.
+Konfigurasi Dasar:
+Authentication: Header Auth
+Name: x-api-key
+Value: Masukkan API Key yang Anda atur di "Settings" dashboard untuk akun tersebut.
+1. Mengirim Teks atau Media via URL (/api/send)
+Method: POST
+URL: https://wa.domain-anda.com/api/send
+Body Content Type: JSON
+Body (Contoh Teks):
+{
+  "accountId": 1,
+  "to": "{{ $('Webhook').item.json.body.data.from }}",
+  "text": "Ini adalah balasan otomatis."
+}
 
-PM2 akan memberikan perintah yang perlu Anda jalankan (biasanya dengan sudo).
 
-Memantau Log:
+Body (Contoh Gambar dari URL):
+{
+  "accountId": 1,
+  "to": "628xxxxxxxxxx@s.whatsapp.net",
+  "text": "Ini gambar untuk Anda.",
+  "media": {
+    "type": "image",
+    "url": "[https://domain.com/gambar.jpg](https://domain.com/gambar.jpg)"
+  }
+}
 
-pm2 logs whatsapp-gateway
 
-4. Struktur Proyek
-/config: Konfigurasi database, logger, dan passport.
-
-/models: Definisi model data Sequelize.
-
-/routes: Pengaturan rute untuk API, auth, dan dashboard.
-
-/middleware: Middleware untuk autentikasi dan otorisasi.
-
-/services: Logika bisnis inti, termasuk koneksi Baileys dan webhook.
-
-/views: File template EJS untuk frontend.
-
-/public: Aset statis (CSS, JS, gambar).
-
-/whatsapp-sessions: Folder tempat Baileys menyimpan file sesi otentikasi (jangan dihapus!).
-
-server.js: File utama aplikasi.
-
-ecosystem.config.js: Konfigurasi untuk PM2.
-
-5. Tips untuk Deployment di VPS (Debian/Ubuntu/Armbian)
-Pastikan build-essential, python, dan git terinstall.
-
-Jika menggunakan Nginx sebagai reverse proxy, konfigurasikan untuk meneruskan request ke localhost:3000 dan atur header yang diperlukan untuk WebSocket jika Anda mengembangkannya nanti.
-
-Pastikan firewall (misal: ufw) mengizinkan trafik pada port 80 (HTTP) dan 443 (HTTPS).
-
-Gunakan Certbot untuk mendapatkan sertifikat SSL/TLS gratis dari Let's Encrypt agar koneksi aman.
+2. Mengirim File Biner (/api/send-media)
+Method: POST
+URL: https://wa.domain-anda.com/api/send-media
+Body Content Type: Form-Data Multipart
+Fields:
+accountId: 1
+to: 628xxxxxxxxxx@s.whatsapp.net
+text: Ini caption untuk file Anda.
+mediaFile: Hubungkan data biner dari node sebelumnya (misal: dari node "Read Binary File"). Pastikan "Binary Property Name" diatur ke data.
+Selamat menggunakan WA Gateway v3.0!
